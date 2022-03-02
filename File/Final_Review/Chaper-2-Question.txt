@@ -1,0 +1,12 @@
+
+1. PCB: Process control block. How OS interact wit PCB?
+
+2. What is the process actually doing when it is hang up (different from waiting). The difference of hang up and blocked. And what is the scheduler dispatched? And what is the relationship with waiting and interrupt.
+
+3. Process scheduling, what does that graph mean?
+
+4. What does the three options on sharing resources? And what does `exec()` function do 
+
+5. What is the socket in cluster communication. 
+
+6. The relationship of system call and interrupt, and its differences. What is the difference of api and system call. 

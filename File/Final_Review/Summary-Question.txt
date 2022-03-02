@@ -1,0 +1,13 @@
+1. In IO, How to Discuss the principles of I/O hardware and its complexity.
+
+2. In IO, why say interrupt handler is maskable to ignore or delay interrupts?
+
+3. In IO, what is IO protection?
+
+4. What is Stream?   
+5. Syn and not syn, block and not block.
+
+Map file and mmp io
+
+
+5. In filesystem, To describe the interfaces to file systems. 

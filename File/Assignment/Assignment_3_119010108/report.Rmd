@@ -1,0 +1,220 @@
+---
+title: "CSC3150_A3_report"
+author: "119010108 HuangPengxiang"
+date: "11/9/2021"
+output: pdf_document
+header-includes: \usepackage{setspace}\doublespacing
+spacing: double
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+\tableofcontents
+\newpage
+
+# Overview
+
+This is the third Assignment for Operating System. In this assignment, The programming goal is to implement the the simulation of the paging methodology and LRU algorithm in memory management **using both single thread or multiple thread**. This simulation is implemented in CUDA. The global memory is treated as disk storage and shared memory is treated as the traditional CPU physical memory. This project focused on designing a paging system with swapping, which can calculate the final page fault number and print it out. 
+
+## Some Declarations
+
+* There might be some **Indentation** unaccustomedness in your computer. I used Mac VSC to develop the program and test it on CenterOS, and I found the Indentation is not comfortable to view when I open it on test computer. I am sorry for that and I hope it won't affect my grade.
+
+* I design this program for every .bin test case **except for the test size is smaller than 32KB**. because when the size is smaller than 32KB, the invalid bit will still exist and will affect my program to swap when you try to read the memory from bottom to top. 
+
+* I finish the bonus part. I generate four thread using CUDA, and each thread will **have a pid number in the invert page table**. Each thread will execute the write and read concurrently, and the the priority of each thread will be Thread 0 > Thread 1 > Thread 2 > Thread 3, which is designed to avoid the race condition. 
+
+# Environment
+
+The running environment is showing below:
+
+* The nvcc version:
+
+```{r, echo=FALSE , out.width="80%"}
+knitr::include_graphics("/Users/huangpengxiang/Desktop/pic/nvcc.png")
+```
+
+* The test environment:
+
+```{r, echo=FALSE , out.width="80%"}
+knitr::include_graphics("/Users/huangpengxiang/Desktop/pic/name.png")
+```
+
+# Running Guidance
+
+## The tree of my program
+
+```{r, echo=FALSE , out.width="80%"}
+knitr::include_graphics("/Users/huangpengxiang/Desktop/pic/tree.png")
+```
+
+## Detailed step to run my program 
+
+I design a makefile for you to run my program. Basically, you should follow the steps below to run it.
+
+```{markdown}
+$ cd /* where the source located */
+$ make        // there will be some warning about "char *" in main.o, just choose to ignore it
+$ make test   // use this command to run 
+$ make clean  // use this command to clear 
+```
+
+## Demo output
+
+The demo output(input size = 128KB) for source part:
+
+**Notice: I use command cmp to compare the data.bin and snapshot.bin** 
+
+```{r, echo=FALSE , out.width="80%"}
+knitr::include_graphics("/Users/huangpengxiang/Desktop/pic/1.png")
+```
+
+
+The demo output(input size = 128KB) for bonus part:
+
+```{r, echo=FALSE , out.width="80%"}
+knitr::include_graphics("/Users/huangpengxiang/Desktop/pic/bonus.png")
+```
+
+# Program Design
+
+## Source design
+
+  The main work for this design is to construct the page table and LRU algorithm, and how to map the virtual memory to physical memory. I will show these part one by one. 
+
+### How I design the inverted page table
+  The page table will be initialized as two parts. The first parts will be initialized as 0x80000000, which the MSB is 1 and represent it is invalid to use. The second part is initialized as index number, which I use it implement the LRU algorithm. The first index will represent the least frequent use and the last one will represent the most frequent use. The value in the index will be the frame number that in the first part.
+  Every time write/read will update the invert page table, and update the order in the second part. If page fault occur, it will find the first index of frame number in second part which represent the least frequent use frame, then update it into a new page number. then read/write a value to swap into memory/disk, and I update the invert page table after I read/write. 
+  
+```{r, echo=FALSE , out.width="80%"}
+knitr::include_graphics("/Users/huangpengxiang/Desktop/pic/chart.png")
+```
+  
+### How I design the LRU algorithm
+  The LRU algorithm is basically always weed out the least frequent used page and replace its space. And the order in my second part of page table is represented as the least-most frequent use order. The first one is represented as least frequent use and the last one is represent the most frequent use. Every time I read/write a value into it, I will maintain this table, which is move the move the frame number after it one forward and move the current frame index to the last.
+  
+### How I map the virtual meomory to physical memory
+  For write, First when The page table still has some invalid bit, then it will keep load page into memory untill it is full. If the memory is full, It will find the least frequent use page and weed it out. and load the new page into the table. **I map the program page to disk memory in linear way**. which means The map between program page and disk is linear. When it try to read the value and page fault occur, it will find the value from disk based on linear way and load it into memory. During this process, I will update and maintain my page table. 
+
+
+## Bonus Design 
+
+  The main work for bonus is to construct muti-thread to execute the single program. Each thread will execute the program one by one and the priority is Thread 0 > Thread 1 > Thread 2 > Thread 3. And after the previous thread finish the snap part, the next thread will begin to execute the program. 
+  And Also I add a new content into the invert page table, which is **Pid Num**. When one thread write the value into memory, the page table will update the corresponding pid number into it. when other thread execute, it will check whether the pid is corresponding to itself, if not, then page fault will occur, and swap the pid number to its own. The first part of page table is the same as the single thread one. And The memory management and map is also follow the same logic as the single thread one. 
+
+```{r, echo=FALSE , out.width="80%"}
+knitr::include_graphics("/Users/huangpengxiang/Desktop/pic/chart2.png")
+```
+
+
+# Program Implementation
+
+## Source Implementation
+
+For `vm_write`, I first check If there occur page fault. if occur, then check whether the frame is full, if the frame is full, I move the page that least frequent use into storage and load the new page into the original frame. if page fault not occur, then there will be some page valid and exist, I found that frame number and load the value into the memory. Finally I update the table to maintain the LRU table. 
+
+```{r, echo=FALSE , out.width="50%"}
+knitr::include_graphics("/Users/huangpengxiang/Desktop/pic/3.png")
+```
+
+For `vm_read` and `vm_snap`, I first check if the page fault occur. if occur, then I swap the memory to the disk and load the needed page into the frame. if not occur, then I find the frame number that contain this page. and load the value into result buffer. Finally update the page table.
+
+```{r, echo=FALSE , out.width="80%"}
+knitr::include_graphics("/Users/huangpengxiang/Desktop/pic/4.png")
+```
+
+## Bonus Implementation
+
+I first initialize the four threads, and let each thread concurrently execute the program. and I add a `_syncthreads` function to let other thread wait the unique thread execute the program. And I also add content to update the page table by changing the pid number.
+
+```{r, echo=FALSE , out.width="80%"}
+knitr::include_graphics("/Users/huangpengxiang/Desktop/pic/6.png")
+```
+
+# Page Fault Calculation
+
+## For Input size = 128KB in single thread
+
+The page fault number is 8193 which contains 4096 page-faults from the write section, 1 page-fault from the read section and 4096 page-faults from the snapshot section.
+
+The page faults in write is 4096 since every page loaded from the input buffer is a new page for the physical memory. There are totally 128K data with 32bytes in each page, we can have 4096 pages. Therefore, it will generate 4096 page faults. 
+
+The page faults in the read section is 1. There are totally 32769 bytes required to be read in the physical memory according the user program. The size for those data is equal to 1024 pages and 1 byte with each page contains 32 bytes. Since the user program will read the data from the bottom of the data binary file, and the data are written from the top to the bottom in the write section, the first 1024 pages will be found in the physical memory. Therefore, only the last byte will generate page fault.
+
+The page fault in the snapshot section is 4096 since in this section the program is required to read the data again from the top to the bottom. Each page will generate the page fault since only the bottom pages are stored in the physical memory at the beginning.
+
+## For Input size = 128KB in four threads
+
+Since there are four threads to execute, and each thread has unique pid, every time change a new thread pid will generate a page fault. then the total page fault in four threads should be $$Four Thread = 4 * Singel Thread$$, which is 32272.
+
+# The Problem I have met
+
+* Significant amount of time is spent on page table design understanding and virtual memory principle interpreting. I was not fully understand about the page table design, and How to design LRU algorithm. In the ordinary page table, each process holds its own page table. I was also unclear about the definition of frames and pages. Therefore, in the beginning, I had a hard time understanding what are the data storing in the page table entries, what should be swapped out to the storage during page fault, how should the program know the location of pages in the storage, how to search the desired page in the page table, where does the page in the page table stores. Finally, I figured out all questions above and ended up with a much more thorough understanding on the paging methodology of operating system.
+
+* The second Problem is How to deal with the page fault. I was stuck with how to deal with the page fault at the beginning and how to map the disk memory to the physical memory. Everytime I output the snapshot.bin file and The page fault is correct but the content in it is differ from data.bin. It stucks me a lot of time. And finally I found that there is a significant error during my read section. I swap the wrong memory and it also occur the page fault, but the content I swap is wrong
+
+```{r, echo=FALSE , out.width="80%"}
+knitr::include_graphics("/Users/huangpengxiang/Desktop/pic/5.png")
+```
+
+* The third problem is the one I didn't sloved. When the input file is smaller than 32kb, when the program execute the read section, It will read the invalid value, and can not found the corresponding value in the disk. and the the disk value have no page number, then my program will terminated. **It even can not finish the read part**
+ 
+```{r, echo=FALSE , out.width="80%"}
+knitr::include_graphics("/Users/huangpengxiang/Desktop/pic/small.png")
+``` 
+
+# What I Learned From This Project
+
+* The paging mechanism is to divide the program or data into different pages and load pages into both shared memory and global memory. we will first search the page table to see if the corresponding page is in the physical memory or not. If the page is not in the physical memory, we will swap the page in the storage with the page in the memory When we try to read the data,
+
+* There are multiple ways to design a frame list which is used to store the least recently used frame number. You can use the counter to design the list. It is an array which contains the number of rounds that one frame hasn’t been used with its index indicates the frame number. 
+
+* There can be multiple thread to execute the same program by using CUDA. all we do is need to synchronization, and let each thread concurrently execute it. we also need to design a new content for the page table to represent the pid.
+
+
+# Other Test For This Project
+
+## Input size is 38265 For single thread:
+
+```{r, echo=FALSE , out.width="80%"}
+knitr::include_graphics("/Users/huangpengxiang/Desktop/pic/10.png")
+``` 
+
+
+## Input size is 38265 For Four threads:
+
+```{r, echo=FALSE , out.width="80%"}
+knitr::include_graphics("/Users/huangpengxiang/Desktop/pic/bonusnew.png")
+``` 
+
+
+## Input size is 62750 for single thread:
+
+```{r, echo=FALSE , out.width="80%"}
+knitr::include_graphics("/Users/huangpengxiang/Desktop/pic/2s.png")
+``` 
+
+## Input size is 62750 for four threads:
+
+```{r, echo=FALSE , out.width="80%"}
+knitr::include_graphics("/Users/huangpengxiang/Desktop/pic/2b.png")
+``` 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

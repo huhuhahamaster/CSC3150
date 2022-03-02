@@ -1,0 +1,8 @@
+make --dry-run --always-make --keep-going --print-directory
+make: Entering directory `/Users/huangpengxiang/Desktop/Assignment_3_119010108/bonus'
+nvcc -c main.cu -rdc=true
+nvcc -c user_program.cu -rdc=true
+nvcc -c virtual_memory.cu -rdc=true
+nvcc -o Project main.o user_program.o virtual_memory.o
+make: Leaving directory `/Users/huangpengxiang/Desktop/Assignment_3_119010108/bonus'
+ 

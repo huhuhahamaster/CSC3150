@@ -1,0 +1,175 @@
+---
+title: "Report"
+author: "HuangPengxiang"
+date: "12/7/2021"
+output: pdf_document
+header-includes: \usepackage{setspace}\doublespacing
+spacing: double
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+\tableofcontents
+\newpage
+
+# Overview
+
+This is the Fifth Assignment of Operating System. In this assignment, The programming goal is to implement the simulation of prime calculation device. This simulation is tested via Linux system with kernel thread. This simulation is also provided file operation to control the device such as write and read. I also **implement the bonus** part, which is aimed to count the interrupt times of input device like keyboard. The kernel result message of this program could use command `dmesg` to check, and the terminal output will also be included.
+
+## Some Important Declarations
+
+- There might be some Indentation unaccustomedness in your computer. I used Mac VSC to develop the program and test it on Ubuntu VM, and I found the Indentation is not comfortable to view when I open it on test computer. I am sorry for that and I hope it won’t affect my grade.
+
+- I finish the part of bonus part, which is to count the kerboard interupt time. You can check the result through kernel output. 
+
+# Environment 
+
+- The Test Environment is showing below:
+
+```{r, echo=FALSE , out.width="80%"}
+knitr::include_graphics("/Users/huangpengxiang/Desktop/pic/1.png")
+```
+
+- The Gcc Version is showing below:
+
+```{r, echo=FALSE , out.width="80%"}
+knitr::include_graphics("/Users/huangpengxiang/Desktop/pic/2.png")
+```
+
+# Running Guidance
+
+The Tree of my program:
+
+```{r, echo=FALSE , out.width="80%"}
+knitr::include_graphics("/Users/huangpengxiang/Desktop/pic/3.png")
+```
+
+Detailed Steps to run my program
+
+To run my program, basically you should follow the instruction below:
+
+```{markdown}
+$ cd /* where the source located */
+$ make // use this command to make
+$ dmesg // use this command to found the device number 
+$ sudo sh mkdev.sh $1 $2  // build the file node, $1 represent the major while $2 represent minor
+$ make clean // remove the module 
+$ sudo sh rmdev.sh // remove file node 
+```
+
+# Program Design
+
+Basically, the global view of the program structure is showing below. There are user mode and kernel mode. In the user mode, the user program will firstly open the device using open operator, if the open failed, it will return an error. Then the user program will call the kernel program and pass the data to the kernel for further calculations. once the kernel finish the calculation, the user can use read operator to read the result. And the result will be shown in the terminal, also the kernel message will also be displayed by demesg command.
+
+```{r, echo=FALSE , out.width="80%"}
+knitr::include_graphics("/Users/huangpengxiang/Desktop/pic/4.png")
+```
+
+
+## Source Design
+
+```{r, echo=FALSE , out.width="80%"}
+knitr::include_graphics("/Users/huangpengxiang/Desktop/pic/12.png")
+```
+
+
+The Design of this character device in kernel can be divided into 3 parts. The detailed information will be introduced below:
+
+The first part is Initial the module. In this part, the kernel module will be initialized and the DMA buffer and work routine will be created at the same time. The module will bind the device and the file operations, and also create the major and minor number for the current device. you may use the command dmesg to check it. Moreover, the user mode can use the function `ioctl` to change the device configuration to implement different operations. There are 6 works of this function like Set the student ID, and check the RW, ioctl, IRQ, and set the blocking or non-blocking mode, confirm the readabel to make sure it can be read.
+
+The second part is the calculation based on the input operator and operand. The kernel device will identify the op code operand and pass it to kernel mode. Then the device will fetch those varible and to simulate the calculations based on the op code. And also, there is a workd routine, which is used to enqueue the task and processed those task by kernel thread. There are two difference way of process, blocking one and non-blocking one. the blocking one will simply wait the the computation is done then return the write operation. but for the non-blocking one, write will immediatly return once the queueing work. The programm will simply use a while loop to wait the kernel thread to finish the computation.
+
+The last part is read the value and terminate the device. when read the value from the dma buffer, the result should be displayed in the terminal and also the original result and value should be clean, the readable variable should be set to false. when exit the module, the memory malloc in the initialize part should be clean. 
+
+## Bouns Design 
+
+The basic flow for bonus is showing below. the bonus is ask us to implement the interrupt conter to count the interrupt like keyboard. To implement this, I design a request irq in module to add an ISR into an IRQ number's action list. when the interrupt occur, the number will plus one, which will implement the counter function. and when the kernel exit, the irq action will also be free to avoid cause kernel panic.
+
+```{r, echo=FALSE , out.width="80%"}
+knitr::include_graphics("/Users/huangpengxiang/Desktop/pic/5.png")
+```
+
+# Progam Implementation
+
+## Source Implementation 
+
+when the initial function called, in the kernel mode, it will allocate the resource for the device and dma buffer.
+```{r, echo=FALSE , out.width="80%"}
+knitr::include_graphics("/Users/huangpengxiang/Desktop/pic/6.png")
+```
+
+When the ioctl function been called, in the kernel mode it will check the command, the kernel mode will get the data from user program to the kernel mode by get_user() function put the data into the DMA buffer.
+
+```{r, echo=FALSE , out.width="80%"}
+knitr::include_graphics("/Users/huangpengxiang/Desktop/pic/7.png")
+```
+
+The user program will also call the arithmetic function, inside which the user program will firstly do the calculation itself and print the answer.
+
+```{r, echo=FALSE , out.width="80%"}
+knitr::include_graphics("/Users/huangpengxiang/Desktop/pic/8.png")
+```
+
+Then the read function will be called to get the final answer, the variable should be cleaned after use. 
+
+```{r, echo=FALSE , out.width="80%"}
+knitr::include_graphics("/Users/huangpengxiang/Desktop/pic/9.png")
+```
+
+## Bonus Implementation
+
+Initialize the counter device. 
+
+```{r, echo=FALSE , out.width="80%"}
+knitr::include_graphics("/Users/huangpengxiang/Desktop/pic/10.png")
+```
+
+exit this module to avoid kernel panic.
+
+```{r, echo=FALSE , out.width="80%"}
+knitr::include_graphics("/Users/huangpengxiang/Desktop/pic/11.png")
+```
+
+# The problem I have met
+
+The most difficult part in this assignment is to understand the working flow, how user mode and kernel mode transfer data with each other? When should we change the readable number? and Where should we place the while loop in order to wait for computation complete? The solution is the user mode and the kernel mode will transfer the data with get_user() function, I changed the readable number when the read function finished, when write with non-blocking mode, when finish the computation and when user set the readable number with ioctl function.
+
+# What I learned from this program 
+
+In this assignment, I clarified the interaction between the IO device and the operating system. They actually communicate through a interface called device driver. Without the device driver, the operating system cannot utilize the IO device. Besides, my understanding on the layer design of the operating system is deepened. I used to conceptually know that the operating system is divided into user and kernel spaces. The usage of functions get user and file operations helped me understand these to layers more.
+
+# Demo Output
+
+The device major and minor:
+
+```{r, echo=FALSE , out.width="80%"}
+knitr::include_graphics("/Users/huangpengxiang/Desktop/pic/13.png")
+```
+
+
+command make mkmod
+
+```{r, echo=FALSE , out.width="80%"}
+knitr::include_graphics("/Users/huangpengxiang/Desktop/pic/14.png")
+```
+
+terminal output of testing the device
+
+```{r, echo=FALSE , out.width="80%"}
+knitr::include_graphics("/Users/huangpengxiang/Desktop/pic/15.png")
+```
+
+```{r, echo=FALSE , out.width="80%"}
+knitr::include_graphics("/Users/huangpengxiang/Desktop/pic/16.png")
+```
+
+Kernel message output:
+
+```{r, echo=FALSE , out.width="80%"}
+knitr::include_graphics("/Users/huangpengxiang/Desktop/pic/17.png")
+```
+
+
+
