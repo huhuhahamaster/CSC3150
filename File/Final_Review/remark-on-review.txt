@@ -1,0 +1,7 @@
+Still remains some content on chapter 1.
+
+Question about the chapter 1:
+
+1. What does it mean by concurrently execution are competing memory cycles?
+
+2. What is the process of interrupt? How does kernel do during this process?

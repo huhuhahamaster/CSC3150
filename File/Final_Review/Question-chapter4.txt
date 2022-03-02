@@ -1,0 +1,19 @@
+1. How to understand kernel is Muti-threaded.
+
+2. What does CPU burst and IO burst mean.
+
+3. The difference between job and process.
+
+4. How to determine the length of next cpu burst.
+
+5. Question about how to calculate. 
+
+6. Why the turnaround time graph looks like that. 
+
+7. How to understand that process permanently in a given queue in mutil-level queue. 
+
+8. Thread scheduling.
+
+9. Difference between semaphore and spin lock. 
+
+10. How to understand the problem of priority inversion and starvation. 

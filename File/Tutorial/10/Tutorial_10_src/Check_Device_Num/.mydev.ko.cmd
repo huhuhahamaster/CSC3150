@@ -1,0 +1,1 @@
+cmd_/home/seed/host/Tutorial_11/Check_Device_Num/mydev.ko := ld -r -m elf_i386 -T ./scripts/module-common.lds --build-id  -o /home/seed/host/Tutorial_11/Check_Device_Num/mydev.ko /home/seed/host/Tutorial_11/Check_Device_Num/mydev.o /home/seed/host/Tutorial_11/Check_Device_Num/mydev.mod.o

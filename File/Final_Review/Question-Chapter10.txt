@@ -1,0 +1,13 @@
+1. Difference between buffer and cache
+
+2. Calculation of index allocation.
+
+3. explain the process of kernel to hardware.
+
+4. clocker and timer
+
+5. controller function. 
+
+6. Interrupt(polling)
+
+7. Raw IO

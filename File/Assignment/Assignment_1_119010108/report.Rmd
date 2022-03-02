@@ -1,0 +1,203 @@
+---
+title: "CSC3150_A1_report"
+author: "HuangPengxiang_119010108"
+date: "10/5/2021"
+fontsiz: 12pt
+output: pdf_document
+
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+\tableofcontents
+\newpage
+
+## Overview
+
+This is the report for CSC3150 project 1. This assignment mainly focuses on revealing the details of processes and multi-processes programming. The content can be divided into two parts, one is user mode multi-process programming in program 1, the other is kernel mode multi-process programming in program 2. And respectively, **program 1** implement the functionality including fork a children process in user mode, execute the test program, parent process wait for the child process terminate and handle and output different signals sended by children process. **program 2** implement the functionality including insert a new model and create a kernel thread, fork a new process in kernel mode, parent process wait until child process and handle some signals. **bonus** this is multi-process programming probelm, and mainly use recursive way to execute the file in terminal and also require us to communicate beteween each process. And here I use MMP to implment the communication among those processes.
+
+### Important Declaration
+
+\textcolor{red} {For Program 2, the path for test in my program is "/opt/test". }
+
+## Enviroment
+
+The environment of running my programs is the following:
+
+  **OS version: Ubuntu 32-bit**
+```{r, echo=FALSE , out.width="80%"}
+knitr::include_graphics("/Users/huangpengxiang/Desktop/6.png")
+```
+
+  **kernel version: Linux-4.10.14**
+```{r, echo=FALSE , out.width="80%"}
+knitr::include_graphics("/Users/huangpengxiang/Desktop/7.png")
+```
+  
+  **gcc --version: gcc (Ubuntu 5.4.0-6ubuntu1~16.04.10) 5.4.0 20160609**
+```{r, echo=FALSE , out.width="80%"}
+knitr::include_graphics("/Users/huangpengxiang/Desktop/8.png")
+```
+ 
+## Program Execution Steps
+
+### Program 1
+
+```{}
+In order to execute the program 1, you should follow these steps
+$ cd /* directory where the program.c located in */
+$ make
+$ ./program1 ./test_program_name ## you can only add one test here
+then you can see the output
+$ make clean # remember to clear
+```
+
+### Program 2
+
+```{}
+First you should make sure you already install Ubuntu 4.10.14
+make sure you already install the modules, export and extern the function including fork, wait, exec,
+getname
+Then you can do the following steps
+$ su root # need you type your password here
+$ cd /* directory where your program2.c located in */
+$ gcc -o test test.c    # compile the test file 
+$ make                  # generate the kernel file 
+$ insmod program2.ko    # insert the kernel module file into kernel 
+$ rmmmod program2.ko    # remmove the kernel moule file
+$ dmesg | tail -n 10    # print the last 10 message in the kernel log to check you successfully finish 
+the job
+$ make clean # remember to clear
+$ rm -f test
+
+you may need to change the const char *path = "/home/huangpengxiang/Desktop/Assignment_1/source/program2
+/test"; to your own path to make it possible to run.
+```
+
+### bonus
+
+```{}
+In order to execute the bonus, you should follow these steps
+$ cd /* directory where the myfork.c located in */
+$ make
+$ ./myfork /* anyfile you want to add, you can add more than 1 file here */
+$ make clean # remember to clear
+```
+
+## Program Design
+
+Here are the program design, it offer the basic idea for each program and some important detailded code. 
+
+### Program 1
+
+The program 1 chart flow is:
+
+```{r, echo=FALSE , out.width="80%"}
+knitr::include_graphics("/Users/huangpengxiang/Desktop/1chart.png")
+```
+
+For This problem, we need to fork the process in user mode. we first use ```fork()``` function to fork a identical children process but with different logical memory. after that, we should use ```execve()``` function to execute the test program. At the same time, parent process should wait the process until it terminate and send some siganls back, we use ```wait_pid()``` here, also can use ```wait()``` function, which have no difference here. we also handle some different cases for different send back signal. In summary,  1. Fork a child process to execute test programs (15 of them) 2. Use wait() to let the parent process receives the SIGCHLD signal 3. Print out the termination information of child process (normal or abnormal)
+
+**some notice here:** you can only test one test_name.c each time, and if you have the correct enviroment but still see some erro, it may have the full process in your computer, try to delete some and you are supposed to see some output.
+
+### program 2
+
+The program 2 chart flow is:
+
+```{r, echo=FALSE , out.width="80%"}
+knitr::include_graphics("/Users/huangpengxiang/Desktop/2chart.png")
+```
+
+For this problem, we need to fork the process in the kernel mode. first we shall made the kernel and kernel modules in the computer before we type ``` make ``` command. ```program_init()``` function is used to initialize the kernel and create the kernel thread. ```my_exec``` is used to test the kernel. ```my_fork()``` is used to fork the process and get the pid for parent and child process. the ```my_wait()```function is used to wait for the child process terminate and send some signal to parent. moreover, do fork is used to allocate a new process resources area in my fork with given function names and other parametes. my exec, the function called by do fork, will then comes in and start the execution of another test file. my exec takes care of locating the test file, passing in the arguments and start the execution. my wait do its job in the parent process. Within the my wait function, struct wait opts is constructed and paased to do wait as a parameter. Therefore, the parent process can check whether the child process is finished through the given child PID.
+In summary, 1. Create a kernel thread and run my_fork function 2. Fork a process to execute test.o 3. Use do_wait() to let the parent process wait for the child process 4. Print out pid of both parent and child processes 5. Catch the signal raised by the child process and print out related log 6. Recompile the Linux kernel source code to use its functions
+
+
+**some notice here**: you may need to change the ```const char *path = "/home/huangpengxiang/Desktop/Assignment_1/source/program2/test"; // you may need to change this path to you own in order to test;``` to your own path to make it possible to run.
+
+### bonus
+
+For this problem, this is a typical muti-process problem in user mode. The difficulty for this problem is how to create a process tree and how to print out the final information for those tree. For first one, I use ```fork_tree()``` to encounter it. it is a recursive function, it will create a fork process tree, and for each child process, it will send the signal to the parent signal, and every parent signal is terminated until receive the signal sended by child process. For the second one, i use the function called ``` mmp ```. Mmap is a method of memory-mapping files. A file or other object is mapped to the address space of a process to achieve the mapping between the file disk address and a segment of virtual address in the process virtual address space. After such mapping is achieved, the process can use Pointers to read and write the memory, and the system will automatically write back dirty pages to the corresponding file disk, that is, the operation on the file is completed without calling system call functions such as read and write. Conversely, changes made by the kernel space to this area directly reflect user space, allowing file sharing between different processes. 
+
+```{r, echo=FALSE , out.width="80%"}
+knitr::include_graphics("/Users/huangpengxiang/Desktop/9.png")
+```
+
+## Some problems I have encountered
+
+The environment is the most difficult part i have dealed with.
+for this one, i found that i have lost a objtool but i already found the objtool.o in my files. so i have to rebuild the kernel to fix it.
+
+```{r, echo=FALSE , out.width="80%"}
+knitr::include_graphics("/Users/huangpengxiang/Desktop/12.png")
+```
+
+for this one, in program 2, it told me i have missed some symbols, then i find those kernel file and export the function, then i modify the kernel.
+
+```{r, echo=FALSE , out.width="80%"}
+knitr::include_graphics("/Users/huangpengxiang/Desktop/13.png")
+```
+
+for this one, it is also the undefined symbol problem, i found that i miss extern the symbol in source file.
+
+```{r, echo=FALSE , out.width="80%"}
+knitr::include_graphics("/Users/huangpengxiang/Desktop/14.png")
+```
+
+### Limitations: some warnings I missed in my program
+
+In program 2, it warns me that ISO C90 have some mixed decalrations in my function. Then I google it, and found that i can ignore the warnings, it won't affect my result.
+
+```{r, echo=FALSE , out.width="80%"}
+knitr::include_graphics("/Users/huangpengxiang/Desktop/15.png")
+```
+
+In bonus, for ``` execev() ``` function, it warns me that I change one pointer to ``` NULL ``` , but i only need one argument in this function, so i choose to ignore it and set this argument to ``` NULL ```.
+
+```{r, echo=FALSE , out.width="80%"}
+knitr::include_graphics("/Users/huangpengxiang/Desktop/16.png")
+```
+
+## Output Screenshots Demo
+
+Here are some output Screenshots Demo:
+
+### program 1
+```{r, echo=FALSE , out.width="80%", out.height="80%"}
+knitr::include_graphics("/Users/huangpengxiang/Desktop/1.png")
+```
+
+```{r, echo=FALSE , out.width="80%", out.height="80%"}
+knitr::include_graphics("/Users/huangpengxiang/Desktop/2.png")
+```
+
+```{r, echo=FALSE , out.width="80%", out.height="80%"}
+knitr::include_graphics("/Users/huangpengxiang/Desktop/3.png")
+```
+
+```{r, echo=FALSE , out.width="80%", out.height="80%"}
+knitr::include_graphics("/Users/huangpengxiang/Desktop/4.png")
+```
+
+
+
+### program 2
+
+
+the output is showing below:
+
+```{r, echo=FALSE , out.width="80%", out.height="80%"}
+knitr::include_graphics("/Users/huangpengxiang/Desktop/5.png")
+```
+
+### bonus
+
+```{r, echo=FALSE , out.width="80%", out.height="80%"}
+knitr::include_graphics("/Users/huangpengxiang/Desktop/10.png")
+```
+
+```{r, echo=FALSE , out.width="80%", out.height="80%"}
+knitr::include_graphics("/Users/huangpengxiang/Desktop/11.png")
+```

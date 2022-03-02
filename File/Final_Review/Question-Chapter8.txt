@@ -1,0 +1,19 @@
+1. How to understand that Memory unit sees a stream of address + read request or address + data and write request. 
+
+2. How to understand that source code address usually symbolic
+
+3. What is stub in dynamic linking. 
+
+4. Does the interrupt vector means the kernel process?
+
+5. What is the 50 percent rule in fragmentation?
+
+6. What does do IO only into  OS buffer mean?
+
+7. Where does page table located?
+
+8. The implementation of page table.
+
+9. What is Belady's anomaly
+
+10. What is MMP 

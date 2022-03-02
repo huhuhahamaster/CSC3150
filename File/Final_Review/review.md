@@ -1,0 +1,29 @@
+1. What is Operating System:  1.is system software that manages computer hardware, software resources, and provides common services for computer programs, which performs all the basic tasks like file management, memory management, process management, handling input and output, and controlling peripheral devices such as disk drives and printers. 2.also provides an interface for users to interact with the system(system call). 3.Most of the time, there are several different computer programs running at the same time, and they all need to access your computer’s central processing unit (CPU), memory and storage. The operating system coordinates all of this to make sure each program gets what it needs. The purpose of an operating system is to provide an environment in which a user can execute programs conveniently and efficiently. 6. the operating system is the one program running at all times on the computer (usually called the kernel), with all else being application programs.
+
+
+
+2. Kenel and User mode: 1.The key difference between User Mode and Kernel Mode is that user mode is the mode in which the applications are running and kernel mode is the privileged mode to which the computer enters when accessing hardware resources.用户态 -->内核态： 由“中断”引发， 硬件自动完成转化的过程，触发中断信号意味着操作系统重新夺回控制权。内核态 --> 用户态： 操作系统执行一条特权指令，修改PSW的标志为“用户态”，意味着操作系统主动让出CPU控制权。（系统调用，内中断（异常），外中断（IO)). 2.用户态的应用程序不用关系这些复杂的计算资源的管理，只是需要使用内核提供的能力使用这些资源就好，将重心放在应用程序的逻辑上。3. 更加安全。如果让用户态的应用程序直接去操作计算资源，各种中各样的应用参差不齐，实现应用的人的水平也参差不齐，那么都去实现这么复杂的计算资源管理逻辑，很容易就将整个底层的资源给搞乱掉，导致全盘皆输。3.无法使用中断。中断在用户空间不可用
+
+
+
+interrupt：1.interrupt transer control to the interrupt service routine generally through a interrupt vetor, which contains the address of all the service routine.interrupt architecture must save the address of the interrupted instruction. 2.signal emitted by hardware or software when a process or an event needs immediate attention. It alerts the processor to a high-priority process requiring interruption of the current working process. In I/O devices one of the bus control lines is dedicated for this purpose and is called the *Interrupt Service Routine (ISR)*.3.When a device raises an interrupt at let’s say process i, the processor first completes the execution of instruction i. Then it loads the Program Counter (PC) with the address of the first instruction of the ISR. Before loading the Program Counter with the address, the address of the interrupted instruction is moved to a temporary location. Therefore, after handling the interrupt the processor can continue with process i+1. 4.Two types.5.实现中断响应和中断返回，**实现优先权排队**，**中断**可以使CPU从**用户态切换为核心态，使操作系统获得计算机的控制权**。有了中断，才能实现多道程序并发执行。
+
+
+
+DMA channels are used to communicate data between the peripheral device and the system memory. All four system resources rely on certain lines on a bus. Some lines on the bus are used for IRQs, some for addresses (the I/O addresses and the memory address) and some for DMA channels.A DMA channel enables a device to transfer data without exposing the CPU to a work overload. Without the DMA channels, the CPU copies every piece of data using a peripheral bus from the I/O device. Using a peripheral bus occupies the CPU during the read/write process and does not allow other work to be performed until the operation is completed.
+
+
+
+To overcome this problem a high-speed cache is set up for page table entries called a Translation Lookaside Buffer (TLB). Translation Lookaside Buffer (TLB) is nothing but a special cache used to keep track of recently used transactions. TLB contains page table entries that have been most recently used. Given a virtual address, the processor examines the TLB if a page table entry is present (TLB hit), the frame number is retrieved and the real address is formed. If a page table entry is not found in the TLB (TLB miss), the page number is used as index while processing page table. TLB first checks if the page is already in main memory, if not in main memory a page fault is issued then the TLB is updated to include the new page entry. 1.hit:CPU generates virtual (logical) address. It is checked in TLB (present). Corresponding frame number is retrieved, which now tells where in the main memory page lies. 2.miss: CPU generates virtual (logical) address. It is checked in TLB (not present). Now the page number is matched to page table residing in main memory (assuming page table contains all PTE). Corresponding frame number is retrieved, which now tells where in the main memory page lies. The TLB is updated with new PTE (if space is not there, one of the replacement technique comes into picture i.e either FIFO, LRU or MFU etc). 
+
+
+
+MMIO:  gives you a single address space and a common set of instructions for both data and I/O operations. You can define memory ordering rules and memory barriers that apply both to device accesses and normal memory. You don't need a whole separate set of opcodes for I/O instructions.
+
+
+
+Process means a program is in execution, whereas thread means a segment of a process. A Process is not Lightweight, whereas Threads are Lightweight. A Process takes more time to terminate, and the thread takes less time to terminate. Process takes more time for creation, whereas Thread takes less time for creation.
+
+
+
+连续空间存放方式顾名思义，文件存放在磁盘「连续的」物理空间中。这种模式下，文件的数据都是紧密相连，读写效率很高，但是有「磁盘空间碎片」和「文件长度不易扩展」的缺陷。非连续空间存放方式分为「链表方式」和「索引方式」。链表的方式存放是离散的，不用连续的，于是就可以消除磁盘碎片，可大大提高磁盘空间的利用率，同时文件的长度可以动态扩展。根据实现的方式的不同，链表可分为「隐式链表」和「显式链接」两种形式。因而不仅显著地提高了检索速度，而且大大减少了访问磁盘的次数。但也正是整个表都存放在内存中的关系，它的主要的缺点是不适用于大磁盘。索引的实现是为每个文件创建一个「索引数据块」，里面存放的是指向文件数据块的指针列表，说白了就像书的目录一样，要找哪个章节的内容，看目录查就可以。文件头需要包含指向「索引数据块」的指针，这样就可以通过文件头知道索引数据块的位置，再通过索引数据块里的索引信息找到对应的数据块索引的方式优点在于： - 文件的创建、增大、缩小很方便； - 不会有碎片的问题； - 支持顺序读写和随机读写.由于[索引数据](https://www.zhihu.com/search?q=索引数据&search_source=Entity&hybrid_search_source=Entity&hybrid_search_extra={"sourceType"%3A"article"%2C"sourceId"%3A183238194})也是存放在磁盘块的，如果文件很小，明明只需一块就可以存放的下，但还是需要额外分配一块来存放索引数据，所以缺陷之一就是存储索引带来的开销。
